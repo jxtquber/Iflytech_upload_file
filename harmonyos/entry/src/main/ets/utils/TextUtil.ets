@@ -129,7 +129,26 @@ export class TextUtil {
 
   static isCloudDir(item: CloudItem): boolean {
     const type = TextUtil.firstNonEmpty(item.docType, item.fileType, item.type).toLowerCase();
-    return type === 'dir' || type === 'folder' || item.dirName.length > 0;
+    if (type === 'dir' || type === 'folder' || type === 'directory') {
+      return true;
+    }
+
+    const hasFileIdentity = TextUtil.firstNonEmpty(
+      item.fileName,
+      item.docName,
+      item.fileId,
+      item.url,
+      item.objectName,
+      item.filePath,
+      item.fileExt,
+      item.docExt
+    ).length > 0;
+    const hasFileSize = item.fileSize > 0 || item.docSize > 0 || item.size > 0;
+    if (hasFileIdentity || hasFileSize) {
+      return false;
+    }
+
+    return item.dirName.length > 0 || item.dirId.length > 0;
   }
 
   static fileTypeColor(ext: string): string {

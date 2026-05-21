@@ -20,7 +20,7 @@ struct Index {
   @State phone: string = '';
   @State code: string = '';
   @State password: string = '';
-  @State passwordLoginMode: boolean = false;
+  @State passwordLoginMode: boolean = true;
   @State loginMessage: string = '未登录';
   @State selectedFiles: SelectedFile[] = [];
   @State currentPage: number = 0;
@@ -490,7 +490,7 @@ struct Index {
         .maxLines(2)
     }
     .width('100%')
-    .height('100%')
+    .layoutWeight(1)
     .padding({ top: 12 })
   }
 
@@ -542,7 +542,7 @@ struct Index {
         .backgroundColor(AppTheme.BLUE_LIGHT)
     }
     .width('100%')
-    .height('100%')
+    .layoutWeight(1)
     .padding({ top: 12 })
   }
 
