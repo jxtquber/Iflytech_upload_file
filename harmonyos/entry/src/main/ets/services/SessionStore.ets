@@ -6,8 +6,10 @@ const PREF_NAME = 'iflyink_upload';
 
 export class SessionStore {
   private prefs?: preferences.Preferences;
+  private context: common.UIAbilityContext;
 
-  constructor(private context: common.UIAbilityContext) {
+  constructor(context: common.UIAbilityContext) {
+    this.context = context;
   }
 
   private async getPrefs(): Promise<preferences.Preferences> {

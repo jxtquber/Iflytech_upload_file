@@ -4,4 +4,9 @@ apktool/build/
 *.idsig
 *.log
 *.tmp
+harmonyos/.hvigor/
+harmonyos/.hvigor-home/
+harmonyos/.idea/
+harmonyos/build/
+harmonyos/entry/build/
 

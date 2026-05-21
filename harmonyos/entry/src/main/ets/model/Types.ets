@@ -7,15 +7,32 @@ export interface SessionData {
   sn: string;
 }
 
+export function copySession(session: SessionData): SessionData {
+  return {
+    phone: session.phone,
+    userId: session.userId,
+    auth: session.auth,
+    userToken: session.userToken,
+    refreshToken: session.refreshToken,
+    sn: session.sn
+  };
+}
+
 export interface ApiResponse {
   code: number;
   raw: string;
 }
 
-export interface SelectedFile {
-  uri: string;
-  name: string;
-  size: number;
+export class SelectedFile {
+  uri: string = '';
+  name: string = '';
+  size: number = 0;
+
+  constructor(uri: string = '', name: string = '', size: number = 0) {
+    this.uri = uri;
+    this.name = name;
+    this.size = size;
+  }
 }
 
 export interface DigestResult {
@@ -23,8 +40,25 @@ export interface DigestResult {
   size: number;
 }
 
-export interface CloudItem {
-  [key: string]: string | number | boolean | object | null | undefined;
+export class CloudItem {
+  fileName: string = '';
+  docName: string = '';
+  dirName: string = '';
+  name: string = '';
+  docType: string = '';
+  fileType: string = '';
+  type: string = '';
+  fileExt: string = '';
+  docExt: string = '';
+  dirId: string = '';
+  fileId: string = '';
+  id: string = '';
+  url: string = '';
+  objectName: string = '';
+  filePath: string = '';
+  fileSize: number = 0;
+  docSize: number = 0;
+  size: number = 0;
 }
 
 export interface UploadProgress {

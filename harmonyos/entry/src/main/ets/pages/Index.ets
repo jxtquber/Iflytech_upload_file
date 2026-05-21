@@ -1,7 +1,7 @@
 import { common } from '@kit.AbilityKit';
 import { promptAction } from '@kit.ArkUI';
 import { AppTheme } from '../common/AppTheme';
-import { CloudItem, EMPTY_SESSION, SelectedFile, SessionData } from '../model/Types';
+import { CloudItem, copySession, EMPTY_SESSION, SelectedFile, SessionData } from '../model/Types';
 import { ApiClient } from '../services/ApiClient';
 import { FileService } from '../services/FileService';
 import { SessionStore } from '../services/SessionStore';
@@ -42,7 +42,7 @@ struct Index {
     this.store = new SessionStore(context);
     this.fileService = new FileService(context, this.api);
     this.api.onSessionChanged = async (session: SessionData) => {
-      this.session = { ...session };
+      this.session = copySession(session);
       await this.store?.save(session);
     };
     this.api.onLog = (message: string) => this.setMessage(message);
@@ -51,7 +51,7 @@ struct Index {
 
   private async loadSession(): Promise<void> {
     const session = await this.store?.load() ?? EMPTY_SESSION;
-    this.session = { ...session };
+    this.session = copySession(session);
     this.phone = session.phone;
     this.api.setSession(session);
     this.loginMessage = session.userId.length > 0 ? `已登录，可上传文件到根目录` : '未登录';
@@ -65,7 +65,9 @@ struct Index {
     }
     try {
       this.setMessage('正在发送验证码...');
-      await this.store?.save({ ...this.session, phone: mobile });
+      const savedSession = copySession(this.session);
+      savedSession.phone = mobile;
+      await this.store?.save(savedSession);
       await this.api.sendSmsCode(mobile);
       this.setMessage('验证码已发送，请查看短信');
     } catch (error) {
@@ -81,7 +83,15 @@ struct Index {
     }
     try {
       if (this.passwordLoginMode) {
-        this.setMessage('鸿蒙版暂未启用密码登录，请切换到验证码登录');
+        if (this.password.length === 0) {
+          this.setMessage('请填写密码');
+          return;
+        }
+        this.setMessage('正在密码登录...');
+        const session = await this.api.loginByPassword(mobile, this.password);
+        this.session = copySession(session);
+        this.api.setSession(session);
+        this.setMessage(`登录成功，userId=${session.userId}`);
         return;
       }
       const smsCode = this.code.trim();
@@ -91,7 +101,7 @@ struct Index {
       }
       this.setMessage('正在验证码登录...');
       const session = await this.api.loginByCode(mobile, smsCode);
-      this.session = { ...session };
+      this.session = copySession(session);
       this.api.setSession(session);
       this.setMessage(`登录成功，userId=${session.userId}`);
     } catch (error) {
@@ -100,7 +110,7 @@ struct Index {
   }
 
   private async logout(): Promise<void> {
-    this.session = { ...EMPTY_SESSION };
+    this.session = copySession(EMPTY_SESSION);
     this.api.setSession(this.session);
     await this.store?.clear();
     this.selectedFiles = [];
@@ -204,8 +214,12 @@ struct Index {
   }
 
   private async openCloudDir(item: CloudItem): Promise<void> {
-    this.cloudDirStack = [...this.cloudDirStack, this.currentCloudDirId];
-    this.cloudNameStack = [...this.cloudNameStack, this.currentCloudDirName];
+    const newDirStack = this.cloudDirStack.slice();
+    const newNameStack = this.cloudNameStack.slice();
+    newDirStack.push(this.currentCloudDirId);
+    newNameStack.push(this.currentCloudDirName);
+    this.cloudDirStack = newDirStack;
+    this.cloudNameStack = newNameStack;
     const dirId = TextUtil.firstNonEmpty(
       TextUtil.objString(item, 'dirId'),
       TextUtil.objString(item, 'fileId'),
@@ -220,8 +234,8 @@ struct Index {
       this.cloudStatus = '已在根目录';
       return;
     }
-    const dirs = [...this.cloudDirStack];
-    const names = [...this.cloudNameStack];
+    const dirs = this.cloudDirStack.slice();
+    const names = this.cloudNameStack.slice();
     const dirId = dirs.pop() ?? ROOT_DIR_ID;
     const dirName = names.pop() ?? '全部文件';
     this.cloudDirStack = dirs;
@@ -293,7 +307,8 @@ struct Index {
   }
 
   private cloudMeta(item: CloudItem): string {
-    return this.isCloudDir(item) ? '文件夹' : TextUtil.formatBytes(Number(TextUtil.objString(item, 'fileSize', 'docSize', 'size')));
+    const size = item.fileSize > 0 ? item.fileSize : (item.docSize > 0 ? item.docSize : item.size);
+    return this.isCloudDir(item) ? '文件夹' : TextUtil.formatBytes(size);
   }
 
   build() {
@@ -384,9 +399,6 @@ struct Index {
           .height(44)
           .type(InputType.Password)
           .onChange((value: string) => this.password = value)
-        Text('密码登录依赖 Android 版 DES 加密兼容，鸿蒙版暂未启用')
-          .fontSize(12)
-          .fontColor(AppTheme.TEXT_MUTED)
       } else {
         TextInput({ placeholder: '短信验证码', text: this.code })
           .height(44)

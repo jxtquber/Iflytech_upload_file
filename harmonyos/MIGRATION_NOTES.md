@@ -32,7 +32,7 @@ Implemented:
 Not migrated:
 
 - Note page. It was intentionally removed from the Android navigation and is not part of the HarmonyOS port.
-- Password login. The Android version encrypts the password with `DES/ECB/PKCS5Padding`; this legacy mode needs verification in DevEco/HarmonyOS SDK before enabling.
+Password login has been implemented with a pure ArkTS `DES/ECB/PKCS5Padding` helper so it does not depend on HarmonyOS cryptoFramework legacy DES support.
 
 ## API Mapping
 
@@ -68,7 +68,7 @@ After DevEco Studio is installed:
 2. Let DevEco install or sync the HarmonyOS SDK and Hvigor toolchain.
 3. If your SDK is not API 18, update `build-profile.json5` to match the installed SDK.
 4. Run preview/build once and fix any SDK import naming differences if DevEco reports them.
-5. Test SMS login before password login. Password login is intentionally disabled until DES compatibility is verified.
+5. Test both SMS login and password login after the first successful install.
 
 ## Files Added
 
@@ -77,4 +77,5 @@ After DevEco Studio is installed:
 - `entry/src/main/ets/services/FileService.ets`: file picker, file read, upload, and save helpers.
 - `entry/src/main/ets/services/SessionStore.ets`: persisted login session.
 - `entry/src/main/ets/utils/HashUtil.ets`: pure ArkTS MD5 and SHA-256.
+- `entry/src/main/ets/utils/DesUtil.ets`: pure ArkTS DES/ECB/PKCS5Padding for password login.
 - `entry/src/main/ets/utils/TextUtil.ets`: filename, cloud item, and display helpers.

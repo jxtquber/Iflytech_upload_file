@@ -6,7 +6,12 @@ import { HashUtil } from '../utils/HashUtil';
 import { TextUtil } from '../utils/TextUtil';
 
 export class FileService {
-  constructor(private context: common.UIAbilityContext, private api: ApiClient) {
+  private context: common.UIAbilityContext;
+  private api: ApiClient;
+
+  constructor(context: common.UIAbilityContext, api: ApiClient) {
+    this.context = context;
+    this.api = api;
   }
 
   async pickFiles(): Promise<SelectedFile[]> {
@@ -15,11 +20,7 @@ export class FileService {
     options.maxSelectNumber = 100;
     const uris = await documentPicker.select(options);
     return uris.map((uri) => {
-      return {
-        uri,
-        name: this.nameFromUri(uri),
-        size: this.safeSize(uri)
-      };
+      return new SelectedFile(uri, this.nameFromUri(uri), this.safeSize(uri));
     });
   }
 

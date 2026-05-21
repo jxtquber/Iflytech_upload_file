@@ -1,5 +1,6 @@
 import { http } from '@kit.NetworkKit';
-import { ApiResponse, CloudItem, SessionData } from '../model/Types';
+import { ApiResponse, CloudItem, copySession, SessionData } from '../model/Types';
+import { DesUtil } from '../utils/DesUtil';
 import { HashUtil } from '../utils/HashUtil';
 import { TextUtil } from '../utils/TextUtil';
 
@@ -8,7 +9,35 @@ const APP_SECRET = '2c8e320f948911eca3fafa163ec9';
 const BASE_API = 'http://api.iflyink.com/xbew-api';
 const ROOT_DIR_ID = '0';
 
-type Params = Record<string, string>;
+class Param {
+  key: string;
+  value: string;
+
+  constructor(key: string, value: string) {
+    this.key = key;
+    this.value = value;
+  }
+}
+
+class FormRequestHeader {
+  'Content-Type': string = 'application/x-www-form-urlencoded; charset=utf-8;';
+  ainoteVersion: string = '';
+  Authorization: string = '';
+  userToken: string = '';
+}
+
+class EmptyRequestHeader {
+  'Content-Type': string = '';
+}
+
+class AddDocPayload {
+  docName: string = '';
+  docExt: string = '';
+  docType: string = '';
+  url: string = '';
+  docSize: number = 0;
+  thumbnail: string = '';
+}
 
 export class ApiClient {
   session: SessionData = {
@@ -24,36 +53,45 @@ export class ApiClient {
   onLog?: (message: string) => void;
 
   setSession(session: SessionData): void {
-    this.session = { ...session };
+    this.session = copySession(session);
   }
 
   async sendSmsCode(mobile: string): Promise<void> {
-    const response = await this.postBeforeLogin(`${BASE_API}/common/sms/pushLogin`, { mobile });
+    const response = await this.postBeforeLogin(`${BASE_API}/common/sms/pushLogin`, [
+      new Param('mobile', mobile)
+    ]);
     if (response.code !== 200) {
       throw new Error(`发送验证码失败: ${TextUtil.compact(response.raw)}`);
     }
   }
 
   async loginByCode(account: string, code: string): Promise<SessionData> {
-    const response = await this.postBeforeLogin(`${BASE_API}/user/codeLogin`, { account, code });
+    const response = await this.postBeforeLogin(`${BASE_API}/user/codeLogin`, [
+      new Param('account', account),
+      new Param('code', code)
+    ]);
     return this.handleLoginResponse(response, account);
   }
 
-  async loginByPassword(): Promise<SessionData> {
-    throw new Error('鸿蒙版暂未启用密码登录，请使用短信验证码登录');
+  async loginByPassword(account: string, password: string): Promise<SessionData> {
+    const response = await this.postBeforeLogin(`${BASE_API}/user/dxkLogin`, [
+      new Param('account', account),
+      new Param('pwd', DesUtil.encryptPassword(password))
+    ]);
+    return this.handleLoginResponse(response, account);
   }
 
   async fetchCloudItems(dirId: string): Promise<CloudItem[]> {
-    const response = await this.postWithSession(`${BASE_API}/note/doc/getCloudFileList`, {
-      userId: this.session.userId,
-      page: ROOT_DIR_ID,
-      limit: '10000',
-      type: '',
-      dirId,
-      name: '',
-      sortField: 'updateTime',
-      sortType: 'descending'
-    });
+    const response = await this.postWithSession(`${BASE_API}/note/doc/getCloudFileList`, [
+      new Param('userId', this.session.userId),
+      new Param('page', ROOT_DIR_ID),
+      new Param('limit', '10000'),
+      new Param('type', ''),
+      new Param('dirId', dirId),
+      new Param('name', ''),
+      new Param('sortField', 'updateTime'),
+      new Param('sortType', 'descending')
+    ]);
     if (response.code !== 200) {
       throw new Error(TextUtil.compact(response.raw));
     }
@@ -61,64 +99,57 @@ export class ApiClient {
   }
 
   async getUploadUrl(objectName: string, size: number): Promise<string> {
-    const response = await this.postWithSession(`${BASE_API}/common/common/getUploadUrl`, {
-      userId: this.session.userId,
-      dir: 'attachment',
-      objectName,
-      size: `${size}`,
-      expiration: '86400',
-      increment: ROOT_DIR_ID
-    });
+    const response = await this.postWithSession(`${BASE_API}/common/common/getUploadUrl`, [
+      new Param('userId', this.session.userId),
+      new Param('dir', 'attachment'),
+      new Param('objectName', objectName),
+      new Param('size', `${size}`),
+      new Param('expiration', '86400'),
+      new Param('increment', ROOT_DIR_ID)
+    ]);
     if (response.code !== 200) {
       throw new Error(`获取上传地址失败: ${TextUtil.compact(response.raw)}`);
     }
-    const data = this.parseJson(response.raw);
     return TextUtil.firstNonEmpty(
-      this.nestedString(data, ['data', 'url']),
-      this.nestedString(data, ['data', 'uploadUrl']),
-      this.extractString(response.raw, 'url')
+      this.extractString(response.raw, 'url'),
+      this.extractString(response.raw, 'uploadUrl')
     );
   }
 
   async addCloudDoc(fileName: string, objectName: string, size: number): Promise<void> {
-    const doc = JSON.stringify({
-      docName: fileName,
-      docExt: TextUtil.extension(fileName).replace('.', '').toLowerCase(),
-      docType: TextUtil.extension(fileName).replace('.', '').toLowerCase(),
-      url: `attachment/${objectName}`,
-      docSize: size,
-      thumbnail: ''
-    });
-    const response = await this.postWithSession(`${BASE_API}/note/doc/addDoc`, {
-      userId: this.session.userId,
-      doc,
-      dirId: ROOT_DIR_ID,
-      checkFileExist: 'true'
-    });
+    const ext = TextUtil.extension(fileName).replace('.', '').toLowerCase();
+    const payload = new AddDocPayload();
+    payload.docName = fileName;
+    payload.docExt = ext;
+    payload.docType = ext;
+    payload.url = `attachment/${objectName}`;
+    payload.docSize = size;
+    const response = await this.postWithSession(`${BASE_API}/note/doc/addDoc`, [
+      new Param('userId', this.session.userId),
+      new Param('doc', JSON.stringify(payload)),
+      new Param('dirId', ROOT_DIR_ID),
+      new Param('checkFileExist', 'true')
+    ]);
     if (response.code !== 200) {
       throw new Error(`登记云盘失败: ${TextUtil.compact(response.raw)}`);
     }
   }
 
   async getDownloadUrl(item: CloudItem): Promise<string> {
-    let objectName = TextUtil.firstNonEmpty(
-      TextUtil.objString(item, 'url'),
-      TextUtil.objString(item, 'objectName'),
-      TextUtil.objString(item, 'filePath')
-    );
+    let objectName = TextUtil.firstNonEmpty(item.url, item.objectName, item.filePath);
     if (objectName.startsWith('attachment/')) {
       objectName = objectName.substring('attachment/'.length);
     }
     if (objectName.length === 0) {
       throw new Error('文件 objectName 为空');
     }
-    const response = await this.postWithSession(`${BASE_API}/common/common/getDownloadUrl`, {
-      userId: this.session.userId,
-      dir: 'attachment',
-      objectName,
-      expiration: '86400',
-      increment: ROOT_DIR_ID
-    });
+    const response = await this.postWithSession(`${BASE_API}/common/common/getDownloadUrl`, [
+      new Param('userId', this.session.userId),
+      new Param('dir', 'attachment'),
+      new Param('objectName', objectName),
+      new Param('expiration', '86400'),
+      new Param('increment', ROOT_DIR_ID)
+    ]);
     if (response.code !== 200) {
       throw new Error(TextUtil.compact(response.raw));
     }
@@ -129,15 +160,10 @@ export class ApiClient {
     if (response.code !== 200) {
       throw new Error(`登录失败: ${TextUtil.compact(response.raw)}`);
     }
-    const root = this.parseJson(response.raw);
-    const data = this.asRecord(root['data']);
-    const detail = this.asRecord(data['detail']);
-    const source = Object.keys(detail).length > 0 ? detail : (Object.keys(data).length > 0 ? data : root);
-
-    const userId = TextUtil.firstNonEmpty(`${source['userId'] ?? ''}`, `${source['id'] ?? ''}`, this.extractString(response.raw, 'userId'));
-    const userToken = TextUtil.firstNonEmpty(`${source['userToken'] ?? ''}`, this.extractString(response.raw, 'userToken'));
-    const refreshToken = TextUtil.firstNonEmpty(`${source['refreshToken'] ?? ''}`, this.extractString(response.raw, 'refreshToken'));
-    const sn = TextUtil.firstNonEmpty(`${source['sn'] ?? ''}`, this.extractString(response.raw, 'sn'));
+    const userId = TextUtil.firstNonEmpty(this.extractString(response.raw, 'userId'), this.extractString(response.raw, 'id'));
+    const userToken = this.extractString(response.raw, 'userToken');
+    const refreshToken = this.extractString(response.raw, 'refreshToken');
+    const sn = this.extractString(response.raw, 'sn');
     if (userId.length === 0 || userToken.length === 0) {
       throw new Error('登录失败: 返回缺少 userId 或 userToken');
     }
@@ -151,10 +177,10 @@ export class ApiClient {
     };
     await this.refreshAccessToken();
     await this.persistSession();
-    return { ...this.session };
+    return copySession(this.session);
   }
 
-  private async postWithSession(url: string, params: Params): Promise<ApiResponse> {
+  private async postWithSession(url: string, params: Param[]): Promise<ApiResponse> {
     let response = await this.postSigned(url, params, this.session.auth, this.session.userToken);
     if (response.code === 401) {
       this.onLog?.('登录态过期，正在刷新...');
@@ -171,7 +197,7 @@ export class ApiClient {
     return response;
   }
 
-  private async postBeforeLogin(url: string, params: Params): Promise<ApiResponse> {
+  private async postBeforeLogin(url: string, params: Param[]): Promise<ApiResponse> {
     let response = await this.postSigned(url, params, this.session.auth, '');
     if (response.code === 401 && await this.refreshAccessToken()) {
       response = await this.postSigned(url, params, this.session.auth, '');
@@ -180,16 +206,13 @@ export class ApiClient {
   }
 
   private async refreshAccessToken(): Promise<boolean> {
-    const response = await this.postSigned(`${BASE_API}/auth/oauth/token`, {}, this.session.auth, this.session.userToken);
+    const response = await this.postSigned(`${BASE_API}/auth/oauth/token`, [], this.session.auth, this.session.userToken);
     if (response.code !== 200) {
       return false;
     }
-    const data = this.parseJson(response.raw);
     const token = TextUtil.firstNonEmpty(
-      `${data['access_token'] ?? ''}`,
-      this.nestedString(data, ['data', 'access_token']),
-      this.nestedString(data, ['data', 'token']),
-      this.extractString(response.raw, 'access_token')
+      this.extractString(response.raw, 'access_token'),
+      this.extractString(response.raw, 'token')
     );
     if (token.length === 0) {
       return false;
@@ -203,55 +226,40 @@ export class ApiClient {
     if (this.session.userId.length === 0 || this.session.refreshToken.length === 0 || this.session.sn.length === 0) {
       return false;
     }
-    const response = await this.postSigned(`${BASE_API}/user/refreshToken`, {
-      userId: this.session.userId,
-      refreshToken: this.session.refreshToken,
-      sn: this.session.sn
-    }, this.session.auth, this.session.userToken);
+    const response = await this.postSigned(`${BASE_API}/user/refreshToken`, [
+      new Param('userId', this.session.userId),
+      new Param('refreshToken', this.session.refreshToken),
+      new Param('sn', this.session.sn)
+    ], this.session.auth, this.session.userToken);
     if (response.code !== 200) {
       return false;
     }
-    const data = this.parseJson(response.raw);
-    const userToken = TextUtil.firstNonEmpty(
-      this.nestedString(data, ['data', 'detail', 'userToken']),
-      this.nestedString(data, ['data', 'userToken']),
-      this.extractString(response.raw, 'userToken')
-    );
+    const userToken = this.extractString(response.raw, 'userToken');
     if (userToken.length === 0) {
       return false;
     }
     this.session.userToken = userToken;
-    this.session.refreshToken = TextUtil.firstNonEmpty(
-      this.nestedString(data, ['data', 'detail', 'refreshToken']),
-      this.nestedString(data, ['data', 'refreshToken']),
-      this.extractString(response.raw, 'refreshToken'),
-      this.session.refreshToken
-    );
-    this.session.sn = TextUtil.firstNonEmpty(
-      this.nestedString(data, ['data', 'detail', 'sn']),
-      this.nestedString(data, ['data', 'sn']),
-      this.extractString(response.raw, 'sn'),
-      this.session.sn
-    );
+    this.session.refreshToken = TextUtil.firstNonEmpty(this.extractString(response.raw, 'refreshToken'), this.session.refreshToken);
+    this.session.sn = TextUtil.firstNonEmpty(this.extractString(response.raw, 'sn'), this.session.sn);
     await this.persistSession();
     return true;
   }
 
-  private async postSigned(url: string, params: Params, auth: string, userToken: string): Promise<ApiResponse> {
-    const signed: Params = { ...params };
-    signed['istv'] = 's';
+  private async postSigned(url: string, params: Param[], auth: string, userToken: string): Promise<ApiResponse> {
+    const signed: Param[] = params.slice();
+    signed.push(new Param('istv', 's'));
     const timestamp = `${Date.now()}`;
-    signed['timestamp'] = timestamp;
-    signed['appKey'] = APP_KEY;
-    signed['nonce'] = HashUtil.md5Text(`${timestamp}${this.randomDigits(10)}`);
-    signed['sign'] = this.sign(signed);
+    signed.push(new Param('timestamp', timestamp));
+    signed.push(new Param('appKey', APP_KEY));
+    signed.push(new Param('nonce', HashUtil.md5Text(`${timestamp}${this.randomDigits(10)}`)));
+    signed.push(new Param('sign', this.sign(signed)));
     const request = http.createHttp();
     try {
       const response = await request.request(url, {
         method: http.RequestMethod.POST,
         connectTimeout: 30000,
         readTimeout: 180000,
-        header: this.headers(auth, userToken, 'application/x-www-form-urlencoded; charset=utf-8;'),
+        header: this.formHeaders(auth, userToken),
         extraData: this.formEncode(signed)
       });
       const raw = this.resultToString(response.result);
@@ -271,7 +279,7 @@ export class ApiClient {
         method: http.RequestMethod.PUT,
         connectTimeout: 30000,
         readTimeout: 180000,
-        header: { 'Content-Type': '' },
+        header: new EmptyRequestHeader(),
         extraData: data
       });
       if (response.responseCode < 200 || response.responseCode >= 300) {
@@ -302,93 +310,201 @@ export class ApiClient {
     }
   }
 
-  private sign(params: Params): string {
-    const keys = Object.keys(params).filter((key) => key !== 'sign' && params[key].length > 0).sort();
-    const pairs: string[] = keys.map((key) => `${key}=${params[key]}`);
+  private sign(params: Param[]): string {
+    const pairs: string[] = [];
+    const values = params.slice();
+    values.sort((left: Param, right: Param) => left.key.localeCompare(right.key));
+    for (const param of values) {
+      if (param.key !== 'sign' && param.value.length > 0) {
+        pairs.push(`${param.key}=${param.value}`);
+      }
+    }
     pairs.push(`secret=${APP_SECRET}`);
     return HashUtil.sha256Text(pairs.join('&')).toUpperCase();
   }
 
-  private headers(auth: string, userToken: string, contentType: string): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': contentType,
-      'ainoteVersion': ''
-    };
-    if (auth.length > 0) {
-      headers['Authorization'] = auth;
-    }
-    if (userToken.length > 0) {
-      headers['userToken'] = userToken;
-    }
+  private formHeaders(auth: string, userToken: string): FormRequestHeader {
+    const headers = new FormRequestHeader();
+    headers.ainoteVersion = '';
+    headers.Authorization = auth;
+    headers.userToken = userToken;
     return headers;
   }
 
-  private formEncode(params: Params): string {
-    return Object.keys(params)
-      .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
-      .join('&');
+  private formEncode(params: Param[]): string {
+    const encoded: string[] = [];
+    for (const param of params) {
+      encoded.push(`${encodeURIComponent(param.key)}=${encodeURIComponent(param.value)}`);
+    }
+    return encoded.join('&');
   }
 
   private responseCode(raw: string, fallback: number): number {
-    const data = this.parseJson(raw);
-    const code = data['code'];
-    if (typeof code === 'number') {
-      return code;
-    }
     const text = this.extractRaw(raw, 'code');
     const parsed = Number.parseInt(text);
     return Number.isNaN(parsed) ? fallback : parsed;
   }
 
   private extractObjectList(raw: string): CloudItem[] {
-    const root = this.parseJson(raw);
-    return this.collectObjects(root['data']);
-  }
-
-  private collectObjects(value: Object | string | number | boolean | null | undefined): CloudItem[] {
-    if (Array.isArray(value)) {
-      return value.filter((item) => typeof item === 'object' && item !== null) as CloudItem[];
+    let arrayText = this.findArrayText(raw, 'list');
+    if (arrayText.length === 0) {
+      arrayText = this.findArrayText(raw, 'records');
     }
-    const record = this.asRecord(value);
-    const list = record['list'] ?? record['records'] ?? record['data'];
-    if (Array.isArray(list)) {
-      return list.filter((item) => typeof item === 'object' && item !== null) as CloudItem[];
+    if (arrayText.length === 0) {
+      arrayText = this.findArrayText(raw, 'data');
     }
-    return Object.keys(record).length > 0 ? [record as CloudItem] : [];
+    if (arrayText.length === 0) {
+      const objectText = this.findObjectText(raw, 'data');
+      if (objectText.length > 0) {
+        const single: CloudItem[] = [];
+        single.push(this.cloudItemFromJson(objectText));
+        return single;
+      }
+      return [];
+    }
+    const objects = this.splitObjects(arrayText);
+    const items: CloudItem[] = [];
+    for (const objectText of objects) {
+      items.push(this.cloudItemFromJson(objectText));
+    }
+    return items;
   }
 
   private extractDownloadUrl(raw: string): string {
-    const root = this.parseJson(raw);
-    const data = this.asRecord(root['data']);
-    const url = data['url'];
-    if (Array.isArray(url) && url.length > 0) {
-      return `${url[0]}`;
+    const arrayText = this.findArrayText(raw, 'url');
+    if (arrayText.length > 0) {
+      const first = this.firstQuotedValue(arrayText);
+      if (first.length > 0) {
+        return first;
+      }
     }
-    return TextUtil.firstNonEmpty(`${url ?? ''}`, this.extractString(raw, 'url'));
+    return this.extractString(raw, 'url');
   }
 
-  private nestedString(root: Record<string, Object | string | number | boolean | null | undefined>, keys: string[]): string {
-    let value: Object | string | number | boolean | null | undefined = root;
-    for (const key of keys) {
-      const record = this.asRecord(value);
-      value = record[key];
-    }
-    return value === undefined || value === null ? '' : `${value}`;
+  private cloudItemFromJson(raw: string): CloudItem {
+    const item = new CloudItem();
+    item.fileName = this.extractString(raw, 'fileName');
+    item.docName = this.extractString(raw, 'docName');
+    item.dirName = this.extractString(raw, 'dirName');
+    item.name = this.extractString(raw, 'name');
+    item.docType = this.extractString(raw, 'docType');
+    item.fileType = this.extractString(raw, 'fileType');
+    item.type = this.extractString(raw, 'type');
+    item.fileExt = this.extractString(raw, 'fileExt');
+    item.docExt = this.extractString(raw, 'docExt');
+    item.dirId = this.extractString(raw, 'dirId');
+    item.fileId = this.extractString(raw, 'fileId');
+    item.id = this.extractString(raw, 'id');
+    item.url = this.extractString(raw, 'url');
+    item.objectName = this.extractString(raw, 'objectName');
+    item.filePath = this.extractString(raw, 'filePath');
+    item.fileSize = this.extractNumber(raw, 'fileSize');
+    item.docSize = this.extractNumber(raw, 'docSize');
+    item.size = this.extractNumber(raw, 'size');
+    return item;
   }
 
-  private parseJson(raw: string): Record<string, Object | string | number | boolean | null | undefined> {
-    try {
-      return JSON.parse(raw) as Record<string, Object | string | number | boolean | null | undefined>;
-    } catch (_) {
-      return {};
+  private findArrayText(raw: string, key: string): string {
+    const marker = `"${key}"`;
+    const keyIndex = raw.indexOf(marker);
+    if (keyIndex < 0) {
+      return '';
     }
+    const colonIndex = raw.indexOf(':', keyIndex + marker.length);
+    const arrayStart = raw.indexOf('[', colonIndex + 1);
+    if (colonIndex < 0 || arrayStart < 0) {
+      return '';
+    }
+    return this.balancedText(raw, arrayStart, '[', ']');
   }
 
-  private asRecord(value: Object | string | number | boolean | null | undefined): Record<string, Object | string | number | boolean | null | undefined> {
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      return value as Record<string, Object | string | number | boolean | null | undefined>;
+  private findObjectText(raw: string, key: string): string {
+    const marker = `"${key}"`;
+    const keyIndex = raw.indexOf(marker);
+    if (keyIndex < 0) {
+      return '';
     }
-    return {};
+    const colonIndex = raw.indexOf(':', keyIndex + marker.length);
+    const objectStart = raw.indexOf('{', colonIndex + 1);
+    if (colonIndex < 0 || objectStart < 0) {
+      return '';
+    }
+    return this.balancedText(raw, objectStart, '{', '}');
+  }
+
+  private balancedText(raw: string, start: number, openChar: string, closeChar: string): string {
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = start; i < raw.length; i++) {
+      const ch = raw.charAt(i);
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (ch === '\\') {
+          escaped = true;
+        } else if (ch === '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch === '"') {
+        inString = true;
+      } else if (ch === openChar) {
+        depth++;
+      } else if (ch === closeChar) {
+        depth--;
+        if (depth === 0) {
+          return raw.substring(start, i + 1);
+        }
+      }
+    }
+    return '';
+  }
+
+  private splitObjects(arrayText: string): string[] {
+    const objects: string[] = [];
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    let start = -1;
+    for (let i = 0; i < arrayText.length; i++) {
+      const ch = arrayText.charAt(i);
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (ch === '\\') {
+          escaped = true;
+        } else if (ch === '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch === '"') {
+        inString = true;
+      } else if (ch === '{') {
+        if (depth === 0) {
+          start = i;
+        }
+        depth++;
+      } else if (ch === '}') {
+        depth--;
+        if (depth === 0 && start >= 0) {
+          objects.push(arrayText.substring(start, i + 1));
+          start = -1;
+        }
+      }
+    }
+    return objects;
+  }
+
+  private firstQuotedValue(raw: string): string {
+    const first = raw.indexOf('"');
+    if (first < 0) {
+      return '';
+    }
+    const second = raw.indexOf('"', first + 1);
+    return second < 0 ? '' : raw.substring(first + 1, second);
   }
 
   private extractString(raw: string, key: string): string {
@@ -424,6 +540,12 @@ export class ApiClient {
     return endIndex < 0 ? '' : raw.substring(colonIndex + 1, endIndex).replace(/["\s]/g, '');
   }
 
+  private extractNumber(raw: string, key: string): number {
+    const text = this.extractRaw(raw, key);
+    const value = Number.parseInt(text);
+    return Number.isNaN(value) ? 0 : value;
+  }
+
   private resultToString(result: string | Object | ArrayBuffer): string {
     if (typeof result === 'string') {
       return result;
@@ -447,14 +569,14 @@ export class ApiClient {
     const digits = '0123456789';
     let value = '';
     for (let i = 0; i < count; i++) {
-      value += digits[Math.floor(Math.random() * digits.length)];
+      value += digits.charAt(Math.floor(Math.random() * digits.length));
     }
     return value;
   }
 
   private async persistSession(): Promise<void> {
     if (this.onSessionChanged) {
-      await this.onSessionChanged({ ...this.session });
+      await this.onSessionChanged(copySession(this.session));
     }
   }
 }

@@ -1,9 +1,14 @@
 {
+  "modelVersion": "5.0.0",
   "name": "iflytech_upload_file_harmonyos",
   "version": "1.0.0",
   "description": "HarmonyOS ArkTS port of Iflytech upload file app",
   "main": "",
   "author": "Codex",
   "license": "UNLICENSED",
-  "dependencies": {}
+  "dependencies": {},
+  "devDependencies": {
+    "@ohos/hypium": "1.0.18",
+    "@ohos/hamock": "1.0.1-rc2"
+  }
 }

@@ -22,9 +22,10 @@ Open this directory:
 After DevEco finishes syncing project files, check or adjust the `compileSdkVersion`,
 `compatibleSdkVersion`, and `runtimeOS` values in `build-profile.json5` if your installed SDK differs.
 
-## Known Compatibility Note
+## Known Environment Note
 
-The Android app's password login encrypts the password with `DES/ECB/PKCS5Padding`.
-HarmonyOS native crypto APIs may not expose that exact legacy DES mode in all SDKs.
-The ArkTS port keeps SMS code login as the main login path and leaves password login disabled until
-the encryption compatibility path is verified in DevEco.
+Password login uses a pure ArkTS implementation of the Android app's `DES/ECB/PKCS5Padding`
+password encryption.
+
+If command-line packaging reports `SDK component missing`, install the full HarmonyOS SDK build
+components from DevEco Studio's SDK Manager, then rerun the build.

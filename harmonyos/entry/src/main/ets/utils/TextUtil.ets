@@ -1,3 +1,5 @@
+import { CloudItem } from '../model/Types';
+
 export class TextUtil {
   static firstNonEmpty(...values: string[]): string {
     for (const value of values) {
@@ -39,42 +41,95 @@ export class TextUtil {
     return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
   }
 
-  static objString(item: Record<string, Object | string | number | boolean | null | undefined>, ...keys: string[]): string {
-    for (const key of keys) {
-      const value = item[key];
-      if (value !== undefined && value !== null) {
-        const text = `${value}`;
-        if (text.length > 0 && text !== 'null') {
-          return text;
-        }
-      }
+  static objString(item: CloudItem, key: string): string {
+    if (key === 'fileName') {
+      return item.fileName;
+    }
+    if (key === 'docName') {
+      return item.docName;
+    }
+    if (key === 'dirName') {
+      return item.dirName;
+    }
+    if (key === 'name') {
+      return item.name;
+    }
+    if (key === 'docType') {
+      return item.docType;
+    }
+    if (key === 'fileType') {
+      return item.fileType;
+    }
+    if (key === 'type') {
+      return item.type;
+    }
+    if (key === 'fileExt') {
+      return item.fileExt;
+    }
+    if (key === 'docExt') {
+      return item.docExt;
+    }
+    if (key === 'dirId') {
+      return item.dirId;
+    }
+    if (key === 'fileId') {
+      return item.fileId;
+    }
+    if (key === 'id') {
+      return item.id;
+    }
+    if (key === 'url') {
+      return item.url;
+    }
+    if (key === 'objectName') {
+      return item.objectName;
+    }
+    if (key === 'filePath') {
+      return item.filePath;
+    }
+    if (key === 'fileSize') {
+      return item.fileSize > 0 ? `${item.fileSize}` : '';
+    }
+    if (key === 'docSize') {
+      return item.docSize > 0 ? `${item.docSize}` : '';
+    }
+    if (key === 'size') {
+      return item.size > 0 ? `${item.size}` : '';
     }
     return '';
   }
 
-  static cloudName(item: Record<string, Object | string | number | boolean | null | undefined>): string {
+  static objString3(item: CloudItem, first: string, second: string, third: string): string {
     return TextUtil.firstNonEmpty(
-      TextUtil.objString(item, 'fileName'),
-      TextUtil.objString(item, 'docName'),
-      TextUtil.objString(item, 'dirName'),
-      TextUtil.objString(item, 'name'),
+      TextUtil.objString(item, first),
+      TextUtil.objString(item, second),
+      TextUtil.objString(item, third)
+    );
+  }
+
+  static cloudName(item: CloudItem): string {
+    return TextUtil.firstNonEmpty(
+      item.fileName,
+      item.docName,
+      item.dirName,
+      item.name,
       '未命名'
     );
   }
 
-  static fileExtLabel(item: Record<string, Object | string | number | boolean | null | undefined>): string {
+  static fileExtLabel(item: CloudItem): string {
     const label = TextUtil.firstNonEmpty(
-      TextUtil.objString(item, 'fileExt'),
-      TextUtil.objString(item, 'docExt'),
-      TextUtil.objString(item, 'docType'),
+      item.fileExt,
+      item.docExt,
+      item.docType,
       TextUtil.extension(TextUtil.cloudName(item)).replace('.', '')
     );
     return label.length > 0 ? label.toUpperCase() : '文件';
   }
 
-  static isCloudDir(item: Record<string, Object | string | number | boolean | null | undefined>): boolean {
-    const type = TextUtil.objString(item, 'docType', 'fileType', 'type').toLowerCase();
-    return type === 'dir' || type === 'folder' || TextUtil.objString(item, 'dirName').length > 0;
+  static isCloudDir(item: CloudItem): boolean {
+    const type = TextUtil.firstNonEmpty(item.docType, item.fileType, item.type).toLowerCase();
+    return type === 'dir' || type === 'folder' || item.dirName.length > 0;
   }
 
   static fileTypeColor(ext: string): string {
