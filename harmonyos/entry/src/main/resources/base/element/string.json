@@ -1,0 +1,12 @@
+{
+  "string": [
+    {
+      "name": "app_name",
+      "value": "讯飞文件"
+    },
+    {
+      "name": "module_desc",
+      "value": "讯飞文件上传工具"
+    }
+  ]
+}

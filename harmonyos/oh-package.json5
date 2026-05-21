@@ -1,0 +1,9 @@
+{
+  "name": "iflytech_upload_file_harmonyos",
+  "version": "1.0.0",
+  "description": "HarmonyOS ArkTS port of Iflytech upload file app",
+  "main": "",
+  "author": "Codex",
+  "license": "UNLICENSED",
+  "dependencies": {}
+}

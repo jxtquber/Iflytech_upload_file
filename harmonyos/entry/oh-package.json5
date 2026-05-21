@@ -1,0 +1,9 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "Iflytech upload file HarmonyOS entry module",
+  "main": "",
+  "author": "Codex",
+  "license": "UNLICENSED",
+  "dependencies": {}
+}
