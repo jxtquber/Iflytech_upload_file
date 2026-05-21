@@ -2275,9 +2275,6 @@
 
     invoke-virtual {v1, v2, v4}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 255
-    invoke-direct {p0}, Lcom/codex/iflyinkuploader/MainActivity;->buildNotePage()V
-
     .line 256
     invoke-direct {p0}, Lcom/codex/iflyinkuploader/MainActivity;->buildUploaderPage()V
 
@@ -2367,19 +2364,6 @@
     invoke-direct {v4, p0}, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda29;-><init>(Lcom/codex/iflyinkuploader/MainActivity;)V
 
     invoke-virtual {v2, v4}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
-
-    .line 270
-    iget-object v2, p0, Lcom/codex/iflyinkuploader/MainActivity;->navNoteButton:Landroid/widget/Button;
-
-    new-instance v4, Landroid/widget/LinearLayout$LayoutParams;
-
-    invoke-direct {p0, v12}, Lcom/codex/iflyinkuploader/MainActivity;->dp(I)I
-
-    move-result v5
-
-    invoke-direct {v4, v0, v5, v9}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
-
-    invoke-virtual {v1, v2, v4}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
     .line 271
     iget-object v2, p0, Lcom/codex/iflyinkuploader/MainActivity;->navUploadButton:Landroid/widget/Button;
@@ -11874,92 +11858,52 @@
 .end method
 
 .method private switchPage(I)V
-    .locals 5
+    .locals 4
 
     .line 519
     iput p1, p0, Lcom/codex/iflyinkuploader/MainActivity;->currentPage:I
-
-    .line 520
-    iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->notePage:Landroid/widget/LinearLayout;
-
-    if-nez v0, :cond_0
-
-    return-void
-
-    .line 521
-    :cond_0
-    iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->notePage:Landroid/widget/LinearLayout;
 
     const/16 v1, 0x8
 
     const/4 v2, 0x0
 
-    if-nez p1, :cond_1
-
-    const/4 v3, 0x0
-
-    goto :goto_0
-
-    :cond_1
-    const/16 v3, 0x8
-
-    :goto_0
-    invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->setVisibility(I)V
-
     .line 522
     iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->uploaderPage:Landroid/widget/LinearLayout;
 
-    const/4 v3, 0x1
+    if-nez p1, :cond_0
 
-    if-ne p1, v3, :cond_2
-
-    const/4 v4, 0x0
+    const/4 v3, 0x0
 
     goto :goto_1
 
-    :cond_2
-    const/16 v4, 0x8
+    :cond_0
+    const/16 v3, 0x8
 
     :goto_1
-    invoke-virtual {v0, v4}, Landroid/widget/LinearLayout;->setVisibility(I)V
+    invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->setVisibility(I)V
 
     .line 523
     iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->cloudPage:Landroid/widget/LinearLayout;
 
-    const/4 v4, 0x2
+    const/4 v3, 0x1
 
-    if-ne p1, v4, :cond_3
+    if-ne p1, v3, :cond_1
 
     const/4 v1, 0x0
 
-    :cond_3
+    :cond_1
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setVisibility(I)V
-
-    .line 524
-    iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->navNoteButton:Landroid/widget/Button;
-
-    if-nez p1, :cond_4
-
-    const/4 v1, 0x1
-
-    goto :goto_2
-
-    :cond_4
-    const/4 v1, 0x0
-
-    :goto_2
-    invoke-direct {p0, v0, v1}, Lcom/codex/iflyinkuploader/MainActivity;->styleNav(Landroid/widget/Button;Z)V
 
     .line 525
     iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->navUploadButton:Landroid/widget/Button;
 
-    if-ne p1, v3, :cond_5
+    if-nez p1, :cond_2
 
     const/4 v1, 0x1
 
     goto :goto_3
 
-    :cond_5
+    :cond_2
     const/4 v1, 0x0
 
     :goto_3
@@ -11968,13 +11912,13 @@
     .line 526
     iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->navCloudButton:Landroid/widget/Button;
 
-    if-ne p1, v4, :cond_6
+    if-ne p1, v3, :cond_3
 
     const/4 v1, 0x1
 
     goto :goto_4
 
-    :cond_6
+    :cond_3
     const/4 v1, 0x0
 
     :goto_4
@@ -11987,24 +11931,14 @@
 
     move-result v0
 
-    if-nez v0, :cond_8
-
-    .line 528
-    if-nez p1, :cond_7
-
-    iget-boolean v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->notesLoaded:Z
-
-    if-nez v0, :cond_7
-
-    invoke-direct {p0, v2}, Lcom/codex/iflyinkuploader/MainActivity;->loadNotes(Z)V
+    if-nez v0, :cond_5
 
     .line 529
-    :cond_7
-    if-ne p1, v4, :cond_8
+    if-ne p1, v3, :cond_5
 
     iget-boolean p1, p0, Lcom/codex/iflyinkuploader/MainActivity;->cloudLoaded:Z
 
-    if-nez p1, :cond_8
+    if-nez p1, :cond_5
 
     const-string p1, "0"
 
@@ -12013,7 +11947,7 @@
     invoke-direct {p0, p1, v0, v3}, Lcom/codex/iflyinkuploader/MainActivity;->loadCloud(Ljava/lang/String;Ljava/lang/String;Z)V
 
     .line 531
-    :cond_8
+    :cond_5
     return-void
 .end method
 
@@ -13271,7 +13205,7 @@
     .locals 0
 
     .line 267
-    const/4 p1, 0x1
+    const/4 p1, 0x0
 
     invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->switchPage(I)V
 
@@ -13282,7 +13216,7 @@
     .locals 0
 
     .line 269
-    const/4 p1, 0x2
+    const/4 p1, 0x1
 
     invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->switchPage(I)V
 
@@ -14980,7 +14914,7 @@
     :cond_2
     iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->statusText:Landroid/widget/TextView;
 
-    const-string v1, "\u5df2\u767b\u5f55\uff0c\u53ef\u4e0a\u4f20 PDF\u3001Word\u3001PPT\u3001EPUB \u5230\u6839\u76ee\u5f55"
+    const-string v1, "\u5df2\u767b\u5f55\uff0c\u53ef\u4e0a\u4f20\u6587\u4ef6\u5230\u6839\u76ee\u5f55"
 
     invoke-virtual {v0, v1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
