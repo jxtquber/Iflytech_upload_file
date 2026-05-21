@@ -1,8 +1,5 @@
 # iflyink-uploader APK reverse workspace
 
-Original APK:
-
-`C:\Users\jxtqu\Downloads\iflyink-uploader-debug.apk.apk`
 
 ## Outputs
 
