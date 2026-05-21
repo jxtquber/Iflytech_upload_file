@@ -13,9 +13,11 @@
 
 .field public final synthetic f$2:Ljava/lang/String;
 
+.field public final synthetic f$3:Lorg/json/JSONObject;
+
 
 # direct methods
-.method public synthetic constructor <init>(Lcom/codex/iflyinkuploader/MainActivity;Ljava/lang/String;Ljava/lang/String;)V
+.method public synthetic constructor <init>(Lcom/codex/iflyinkuploader/MainActivity;Ljava/lang/String;Ljava/lang/String;Lorg/json/JSONObject;)V
     .locals 0
 
     .line 0
@@ -27,13 +29,15 @@
 
     iput-object p3, p0, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda11;->f$2:Ljava/lang/String;
 
+    iput-object p4, p0, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda11;->f$3:Lorg/json/JSONObject;
+
     return-void
 .end method
 
 
 # virtual methods
 .method public final run()V
-    .locals 3
+    .locals 4
 
     .line 0
     iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda11;->f$0:Lcom/codex/iflyinkuploader/MainActivity;
@@ -42,7 +46,9 @@
 
     iget-object v2, p0, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda11;->f$2:Ljava/lang/String;
 
-    invoke-virtual {v0, v1, v2}, Lcom/codex/iflyinkuploader/MainActivity;->lambda$showNoteDetail$26$com-codex-iflyinkuploader-MainActivity(Ljava/lang/String;Ljava/lang/String;)V
+    iget-object v3, p0, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda11;->f$3:Lorg/json/JSONObject;
+
+    invoke-virtual {v0, v1, v2, v3}, Lcom/codex/iflyinkuploader/MainActivity;->lambda$showNoteDetail$26$com-codex-iflyinkuploader-MainActivity(Ljava/lang/String;Ljava/lang/String;Lorg/json/JSONObject;)V
 
     return-void
 .end method

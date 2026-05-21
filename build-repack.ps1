@@ -1,24 +1,65 @@
 $ErrorActionPreference = 'Stop'
 
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Java = Join-Path $Root 'tools\jre21\jdk-21.0.11+10-jre\bin\java.exe'
+$JavaHome = 'C:\Program Files\Android\Android Studio\jbr'
+$AndroidHome = 'C:\Users\jxtqu\AppData\Local\Android\Sdk'
+$BuildTools = Join-Path $AndroidHome 'build-tools\37.0.0'
+
+$Java = Join-Path $JavaHome 'bin\java.exe'
+$Keytool = Join-Path $JavaHome 'bin\keytool.exe'
 $Apktool = Join-Path $Root 'tools\apktool.jar'
-$Signer = Join-Path $Root 'tools\uber-apk-signer.jar'
+$Zipalign = Join-Path $BuildTools 'zipalign.exe'
+$ApkSigner = Join-Path $BuildTools 'apksigner.bat'
 $Project = Join-Path $Root 'apktool'
 $Dist = Join-Path $Root 'dist'
 $Signed = Join-Path $Dist 'signed'
 $UnsignedApk = Join-Path $Dist 'iflyink-uploader-rebuilt-unsigned.apk'
+$AlignedApk = Join-Path $Dist 'iflyink-uploader-rebuilt-aligned.apk'
+$SignedApk = Join-Path $Signed 'iflyink-uploader-rebuilt-debugSigned.apk'
+$KeyStore = Join-Path $Root 'tools\debug.keystore'
+
+foreach ($Tool in @($Java, $Keytool, $Apktool, $Zipalign, $ApkSigner)) {
+    if (-not (Test-Path -LiteralPath $Tool)) {
+        throw "Required tool not found: $Tool"
+    }
+}
+
+$env:JAVA_HOME = $JavaHome
+$env:PATH = "$JavaHome\bin;$AndroidHome\platform-tools;$env:PATH"
 
 New-Item -ItemType Directory -Force -Path $Dist | Out-Null
-Remove-Item -LiteralPath $UnsignedApk -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $Signed | Out-Null
+Remove-Item -LiteralPath $UnsignedApk, $AlignedApk, $SignedApk -Force -ErrorAction SilentlyContinue
 
 & $Java -jar $Apktool b $Project -o $UnsignedApk
 if ($LASTEXITCODE -ne 0) { throw "apktool build failed" }
 
-Remove-Item -LiteralPath $Signed -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path $Signed | Out-Null
+& $Zipalign -f -p 4 $UnsignedApk $AlignedApk
+if ($LASTEXITCODE -ne 0) { throw "zipalign failed" }
 
-& $Java -jar $Signer -a $UnsignedApk -o $Signed
+if (-not (Test-Path -LiteralPath $KeyStore)) {
+    & $Keytool -genkeypair `
+        -keystore $KeyStore `
+        -storepass android `
+        -keypass android `
+        -alias androiddebugkey `
+        -keyalg RSA `
+        -keysize 2048 `
+        -validity 10000 `
+        -dname 'CN=Android Debug,O=Android,C=US'
+    if ($LASTEXITCODE -ne 0) { throw "debug keystore creation failed" }
+}
+
+& $ApkSigner sign `
+    --ks $KeyStore `
+    --ks-pass pass:android `
+    --key-pass pass:android `
+    --ks-key-alias androiddebugkey `
+    --out $SignedApk `
+    $AlignedApk
 if ($LASTEXITCODE -ne 0) { throw "APK signing failed" }
 
-Get-ChildItem -LiteralPath $Signed -Filter '*.apk' | Select-Object FullName, Length, LastWriteTime
+& $ApkSigner verify --verbose $SignedApk
+if ($LASTEXITCODE -ne 0) { throw "APK signature verification failed" }
+
+Get-Item -LiteralPath $SignedApk | Select-Object FullName, Length, LastWriteTime

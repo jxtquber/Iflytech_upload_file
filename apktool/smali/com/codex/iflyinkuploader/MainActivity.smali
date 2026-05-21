@@ -158,6 +158,8 @@
 
 .field private noteStatusText:Landroid/widget/TextView;
 
+.field private notesForceRefresh:Z
+
 .field private notesLoaded:Z
 
 .field private pageContainer:Landroid/widget/LinearLayout;
@@ -952,7 +954,7 @@
 
     .line 1172
     :cond_2
-    const-string v0, "<p style=\'color:#697c91\'>[\u56fe\u7247\u9644\u4ef6] "
+    const-string v0, "<p><img src=\'http://biji.iflyink.com/xbew-webserver/"
 
     invoke-virtual {p2, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -968,7 +970,7 @@
     move-result-object p1
 
     .line 1174
-    const-string p2, "</p>"
+    const-string p2, "\'/></p>"
 
     invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -3407,7 +3409,51 @@
 
     move-result-object v0
 
+    const-string v1, "pages"
+
+    invoke-virtual {p1, v1}, Lorg/json/JSONObject;->optJSONArray(Ljava/lang/String;)Lorg/json/JSONArray;
+
+    move-result-object v1
+
+    if-eqz v1, :cond_pre_blocks
+
+    invoke-direct {p0, v1, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectRichText(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    :cond_pre_blocks
+    const-string v1, "blocks"
+
+    invoke-virtual {p1, v1}, Lorg/json/JSONObject;->optJSONArray(Ljava/lang/String;)Lorg/json/JSONArray;
+
+    move-result-object v1
+
+    if-eqz v1, :cond_pre_children
+
+    invoke-direct {p0, v1, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectRichText(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    :cond_pre_children
+    const-string v1, "children"
+
+    invoke-virtual {p1, v1}, Lorg/json/JSONObject;->optJSONArray(Ljava/lang/String;)Lorg/json/JSONArray;
+
+    move-result-object v1
+
+    if-eqz v1, :cond_pre_text
+
+    invoke-direct {p0, v1, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectRichText(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    :cond_pre_text
+    invoke-virtual {p2}, Ljava/lang/StringBuilder;->length()I
+
+    move-result v1
+
+    if-lez v1, :cond_do_text
+
+    invoke-direct {p0, p1, p2}, Lcom/codex/iflyinkuploader/MainActivity;->appendImageIfPresent(Lorg/json/JSONObject;Ljava/lang/StringBuilder;)V
+
+    return-void
+
     .line 1123
+    :cond_do_text
     invoke-virtual {v0}, Ljava/lang/String;->isEmpty()Z
 
     move-result v1
@@ -3428,7 +3474,7 @@
 
     move-result-object v0
 
-    const-string v1, "<hr/>"
+    const-string v1, "\n"
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -4992,6 +5038,298 @@
     .line 899
     :cond_0
     return-object v1
+.end method
+
+.method private fetchNoteDetailRaw(Ljava/lang/String;)Ljava/lang/String;
+    .locals 3
+    .annotation system Ldalvik/annotation/Throws;
+        value = {
+            Ljava/lang/Exception;
+        }
+    .end annotation
+
+    new-instance v0, Ljava/util/LinkedHashMap;
+
+    invoke-direct {v0}, Ljava/util/LinkedHashMap;-><init>()V
+
+    const-string v1, "id"
+
+    invoke-interface {v0, v1, p1}, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+
+    const-string p1, "http://api.iflyink.com/xbew-api/note/dxk/getNoteDetail"
+
+    invoke-direct {p0, p1, v0}, Lcom/codex/iflyinkuploader/MainActivity;->postWithSession(Ljava/lang/String;Ljava/util/Map;)Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;
+
+    move-result-object p1
+
+    iget v0, p1, Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;->code:I
+
+    const/16 v1, 0xc8
+
+    if-ne v0, v1, :cond_0
+
+    iget-object p1, p1, Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;->raw:Ljava/lang/String;
+
+    return-object p1
+
+    :cond_0
+    new-instance v0, Ljava/lang/IllegalStateException;
+
+    new-instance v1, Ljava/lang/StringBuilder;
+
+    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v2, "\u7b14\u8bb0\u8be6\u60c5\u83b7\u53d6\u5931\u8d25: "
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    iget-object p1, p1, Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;->raw:Ljava/lang/String;
+
+    invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->compact(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object p1
+
+    invoke-virtual {v1, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p1
+
+    invoke-direct {v0, p1}, Ljava/lang/IllegalStateException;-><init>(Ljava/lang/String;)V
+
+    throw v0
+.end method
+
+.method private applyNoteDetailCache(Lorg/json/JSONObject;Ljava/lang/String;)V
+    .locals 3
+
+    const-string v0, "\u7b14\u8bb0\u8be6\u60c5"
+
+    invoke-direct {p0, p2, v0}, Lcom/codex/iflyinkuploader/MainActivity;->noteDetailTitle(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/String;->isEmpty()Z
+
+    move-result v1
+
+    if-nez v1, :cond_0
+
+    :try_start_0
+    const-string v1, "__title"
+
+    invoke-virtual {p1, v1, v0}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
+
+    :cond_0
+    const-string v0, "__rawDetail"
+
+    invoke-virtual {p1, v0, p2}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
+
+    const-string v0, "__html"
+
+    invoke-direct {p0, p2}, Lcom/codex/iflyinkuploader/MainActivity;->noteHtml(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object p2
+
+    invoke-virtual {p1, v0, p2}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+
+    :catch_0
+    return-void
+.end method
+
+.method private collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+    .locals 3
+
+    instance-of v0, p1, Lorg/json/JSONObject;
+
+    if-eqz v0, :cond_json_array
+
+    check-cast p1, Lorg/json/JSONObject;
+
+    invoke-direct {p0, p1, p2}, Lcom/codex/iflyinkuploader/MainActivity;->appendImageIfPresent(Lorg/json/JSONObject;Ljava/lang/StringBuilder;)V
+
+    const-string v0, "pages"
+
+    invoke-virtual {p1, v0}, Lorg/json/JSONObject;->optJSONArray(Ljava/lang/String;)Lorg/json/JSONArray;
+
+    move-result-object v0
+
+    if-eqz v0, :cond_blocks
+
+    invoke-direct {p0, v0, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    :cond_blocks
+    const-string v0, "blocks"
+
+    invoke-virtual {p1, v0}, Lorg/json/JSONObject;->optJSONArray(Ljava/lang/String;)Lorg/json/JSONArray;
+
+    move-result-object v0
+
+    if-eqz v0, :cond_children
+
+    invoke-direct {p0, v0, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    :cond_children
+    const-string v0, "children"
+
+    invoke-virtual {p1, v0}, Lorg/json/JSONObject;->optJSONArray(Ljava/lang/String;)Lorg/json/JSONArray;
+
+    move-result-object v0
+
+    if-eqz v0, :cond_content
+
+    invoke-direct {p0, v0, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    :cond_content
+    const-string v0, "content"
+
+    invoke-virtual {p1, v0}, Lorg/json/JSONObject;->optJSONObject(Ljava/lang/String;)Lorg/json/JSONObject;
+
+    move-result-object v0
+
+    if-eqz v0, :cond_src
+
+    invoke-direct {p0, v0, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    :cond_src
+    const-string v0, "src"
+
+    invoke-virtual {p1, v0}, Lorg/json/JSONObject;->optJSONObject(Ljava/lang/String;)Lorg/json/JSONObject;
+
+    move-result-object v0
+
+    if-eqz v0, :cond_params
+
+    invoke-direct {p0, v0, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    :cond_params
+    const-string v0, "paramsJSON"
+
+    invoke-virtual {p1, v0}, Lorg/json/JSONObject;->optJSONObject(Ljava/lang/String;)Lorg/json/JSONObject;
+
+    move-result-object p1
+
+    if-eqz p1, :cond_done
+
+    invoke-direct {p0, p1, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    goto :cond_done
+
+    :cond_json_array
+    instance-of v0, p1, Lorg/json/JSONArray;
+
+    if-eqz v0, :cond_done
+
+    check-cast p1, Lorg/json/JSONArray;
+
+    const/4 v0, 0x0
+
+    :goto_0
+    invoke-virtual {p1}, Lorg/json/JSONArray;->length()I
+
+    move-result v1
+
+    if-ge v0, v1, :cond_done
+
+    invoke-virtual {p1, v0}, Lorg/json/JSONArray;->opt(I)Ljava/lang/Object;
+
+    move-result-object v1
+
+    invoke-direct {p0, v1, p2}, Lcom/codex/iflyinkuploader/MainActivity;->collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    add-int/lit8 v0, v0, 0x1
+
+    goto :goto_0
+
+    :cond_done
+    return-void
+.end method
+
+.method private warmNoteDetailCache(Ljava/util/List;)V
+    .locals 4
+
+    invoke-interface {p1}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+
+    move-result-object p1
+
+    :goto_0
+    invoke-interface {p1}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v0
+
+    if-eqz v0, :cond_1
+
+    invoke-interface {p1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Lorg/json/JSONObject;
+
+    const/4 v1, 0x2
+
+    new-array v1, v1, [Ljava/lang/String;
+
+    const/4 v2, 0x0
+
+    const-string v3, "noteId"
+
+    aput-object v3, v1, v2
+
+    const/4 v2, 0x1
+
+    const-string v3, "id"
+
+    aput-object v3, v1, v2
+
+    invoke-direct {p0, v0, v1}, Lcom/codex/iflyinkuploader/MainActivity;->objString(Lorg/json/JSONObject;[Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v1
+
+    invoke-virtual {v1}, Ljava/lang/String;->isEmpty()Z
+
+    move-result v2
+
+    if-nez v2, :cond_0
+
+    :try_start_0
+    invoke-direct {p0, v1}, Lcom/codex/iflyinkuploader/MainActivity;->fetchNoteDetailRaw(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v1
+
+    invoke-direct {p0, v0, v1}, Lcom/codex/iflyinkuploader/MainActivity;->applyNoteDetailCache(Lorg/json/JSONObject;Ljava/lang/String;)V
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+
+    goto :goto_0
+
+    :catch_0
+    move-exception v0
+
+    invoke-virtual {v0}, Ljava/lang/Exception;->getMessage()Ljava/lang/String;
+
+    move-result-object v0
+
+    if-eqz v0, :cond_0
+
+    invoke-virtual {v0}, Ljava/lang/String;->isEmpty()Z
+
+    move-result v1
+
+    if-nez v1, :cond_0
+
+    invoke-direct {p0, v0}, Lcom/codex/iflyinkuploader/MainActivity;->log(Ljava/lang/String;)V
+
+    :cond_0
+    goto :goto_0
+
+    :cond_1
+    return-void
 .end method
 
 .method private fileExtLabel(Lorg/json/JSONObject;)Ljava/lang/String;
@@ -6671,90 +7009,10 @@
 .end method
 
 .method private isAllowedDocument(Ljava/lang/String;)Z
-    .locals 2
+    .locals 1
 
-    .line 1615
-    invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->extension(Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object p1
-
-    const-string v0, "."
-
-    const-string v1, ""
-
-    invoke-virtual {p1, v0, v1}, Ljava/lang/String;->replace(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Ljava/lang/String;
-
-    move-result-object p1
-
-    sget-object v0, Ljava/util/Locale;->ROOT:Ljava/util/Locale;
-
-    invoke-virtual {p1, v0}, Ljava/lang/String;->toLowerCase(Ljava/util/Locale;)Ljava/lang/String;
-
-    move-result-object p1
-
-    .line 1616
-    const-string v0, "pdf"
-
-    invoke-virtual {p1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    move-result v0
-
-    if-nez v0, :cond_1
-
-    const-string v0, "doc"
-
-    invoke-virtual {p1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    move-result v0
-
-    if-nez v0, :cond_1
-
-    const-string v0, "docx"
-
-    invoke-virtual {p1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    move-result v0
-
-    if-nez v0, :cond_1
-
-    .line 1617
-    const-string v0, "ppt"
-
-    invoke-virtual {p1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    move-result v0
-
-    if-nez v0, :cond_1
-
-    const-string v0, "pptx"
-
-    invoke-virtual {p1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    move-result v0
-
-    if-nez v0, :cond_1
-
-    const-string v0, "epub"
-
-    invoke-virtual {p1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    move-result p1
-
-    if-eqz p1, :cond_0
-
-    goto :goto_0
-
-    :cond_0
-    const/4 p1, 0x0
-
-    goto :goto_1
-
-    :cond_1
-    :goto_0
     const/4 p1, 0x1
 
-    .line 1616
-    :goto_1
     return p1
 .end method
 
@@ -7036,6 +7294,8 @@
 
     .line 863
     :cond_1
+    iput-boolean p1, p0, Lcom/codex/iflyinkuploader/MainActivity;->notesForceRefresh:Z
+
     iget-object p1, p0, Lcom/codex/iflyinkuploader/MainActivity;->noteStatusText:Landroid/widget/TextView;
 
     const-string v0, "\u6b63\u5728\u52a0\u8f7d\u7b14\u8bb0..."
@@ -7715,6 +7975,44 @@
     :cond_1
     nop
 
+    const-string v8, "type"
+
+    invoke-virtual {v7, v8, v5}, Lorg/json/JSONObject;->optString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v8
+
+    const-string v9, "1"
+
+    invoke-virtual {v9, v8}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v8
+
+    if-eqz v8, :cond_not_writing_note
+
+    new-instance v8, Ljava/lang/StringBuilder;
+
+    invoke-direct {v8}, Ljava/lang/StringBuilder;-><init>()V
+
+    invoke-direct {p0, v7, v8}, Lcom/codex/iflyinkuploader/MainActivity;->collectImagesOnly(Ljava/lang/Object;Ljava/lang/StringBuilder;)V
+
+    invoke-virtual {v8}, Ljava/lang/StringBuilder;->length()I
+
+    move-result v9
+
+    if-lez v9, :cond_not_writing_note
+
+    invoke-virtual {v8}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p1
+
+    invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->normalizeHtml(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object p1
+
+    return-object p1
+
+    :cond_not_writing_note
+
     .line 1078
     invoke-virtual {v7, v2, v5}, Lorg/json/JSONObject;->optString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
@@ -7778,7 +8076,7 @@
 
     const/4 v8, 0x1
 
-    aput-object v9, v10, v8
+    aput-object v5, v10, v8
 
     const/4 v8, 0x2
 
@@ -7786,19 +8084,19 @@
 
     const/4 v0, 0x3
 
-    aput-object v2, v10, v0
+    aput-object v7, v10, v0
 
     const/4 v0, 0x4
 
-    aput-object v1, v10, v0
+    aput-object v2, v10, v0
 
     const/4 v0, 0x5
 
-    aput-object v5, v10, v0
+    aput-object v9, v10, v0
 
     const/4 v0, 0x6
 
-    aput-object v7, v10, v0
+    aput-object v1, v10, v0
 
     .line 1077
     invoke-direct {p0, v10}, Lcom/codex/iflyinkuploader/MainActivity;->firstNonEmpty([Ljava/lang/String;)Ljava/lang/String;
@@ -8111,23 +8409,37 @@
     .locals 6
 
     .line 1109
-    const/4 v0, 0x7
+    const/16 v0, 0xb
 
     new-array v0, v0, [Ljava/lang/String;
 
     const/4 v1, 0x0
 
-    const-string v2, "noteName"
+    const-string v2, "__title"
 
     aput-object v2, v0, v1
 
     const/4 v2, 0x1
 
-    const-string v3, "name"
+    const-string v2, "noteName"
+
+    const/4 v3, 0x1
+
+    aput-object v2, v0, v3
+
+    const/4 v2, 0x2
+
+    const-string v3, "noteTitle"
 
     aput-object v3, v0, v2
 
-    const/4 v3, 0x2
+    const-string v3, "name"
+
+    const/4 v4, 0x3
+
+    aput-object v3, v0, v4
+
+    const/4 v3, 0x4
 
     const-string v4, "title"
 
@@ -8135,25 +8447,37 @@
 
     const-string v4, "fileName"
 
-    const/4 v5, 0x3
+    const/4 v5, 0x5
 
     aput-object v4, v0, v5
 
     const-string v4, "docName"
 
-    const/4 v5, 0x4
+    const/4 v5, 0x6
 
     aput-object v4, v0, v5
 
     const-string v4, "subject"
 
-    const/4 v5, 0x5
+    const/4 v5, 0x7
 
     aput-object v4, v0, v5
 
     const-string v4, "summaryTitle"
 
-    const/4 v5, 0x6
+    const/16 v5, 0x8
+
+    aput-object v4, v0, v5
+
+    const-string v4, "createTimeText"
+
+    const/16 v5, 0x9
+
+    aput-object v4, v0, v5
+
+    const-string v4, "date"
+
+    const/16 v5, 0xa
 
     aput-object v4, v0, v5
 
@@ -8161,9 +8485,13 @@
 
     move-result-object p1
 
+    const/4 v3, 0x2
+
     new-array v0, v3, [Ljava/lang/String;
 
     aput-object p1, v0, v1
+
+    const/4 v2, 0x1
 
     aput-object p2, v0, v2
 
@@ -8517,7 +8845,7 @@
 .end method
 
 .method private pickFile()V
-    .locals 5
+    .locals 3
 
     .line 738
     new-instance v0, Landroid/content/Intent;
@@ -8542,49 +8870,6 @@
     const/4 v2, 0x1
 
     invoke-virtual {v0, v1, v2}, Landroid/content/Intent;->putExtra(Ljava/lang/String;Z)Landroid/content/Intent;
-
-    .line 742
-    const/4 v1, 0x6
-
-    new-array v1, v1, [Ljava/lang/String;
-
-    const-string v3, "application/pdf"
-
-    const/4 v4, 0x0
-
-    aput-object v3, v1, v4
-
-    const-string v3, "application/msword"
-
-    aput-object v3, v1, v2
-
-    const-string v2, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-
-    const/4 v3, 0x2
-
-    aput-object v2, v1, v3
-
-    const-string v2, "application/vnd.ms-powerpoint"
-
-    const/4 v3, 0x3
-
-    aput-object v2, v1, v3
-
-    const-string v2, "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-
-    const/4 v3, 0x4
-
-    aput-object v2, v1, v3
-
-    const-string v2, "application/epub+zip"
-
-    const/4 v3, 0x5
-
-    aput-object v2, v1, v3
-
-    const-string v2, "android.intent.extra.MIME_TYPES"
-
-    invoke-virtual {v0, v2, v1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;[Ljava/lang/String;)Landroid/content/Intent;
 
     .line 750
     const/16 v1, 0x65
@@ -10927,7 +11212,9 @@
 .end method
 
 .method private showNoteDetail(Lorg/json/JSONObject;)V
-    .locals 3
+    .locals 4
+
+    move-object v3, p1
 
     .line 1046
     const/4 v0, 0x2
@@ -10957,7 +11244,26 @@
 
     move-result-object v1
 
+    const-string v2, "__html"
+
+    const-string p1, ""
+
+    invoke-virtual {v3, v2, p1}, Lorg/json/JSONObject;->optString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v2
+
+    invoke-virtual {v2}, Ljava/lang/String;->isEmpty()Z
+
+    move-result p1
+
+    if-nez p1, :cond_cache_miss
+
+    invoke-direct {p0, v1, v2}, Lcom/codex/iflyinkuploader/MainActivity;->showRichNoteDialog(Ljava/lang/String;Ljava/lang/String;)V
+
+    return-void
+
     .line 1048
+    :cond_cache_miss
     invoke-virtual {v0}, Ljava/lang/String;->isEmpty()Z
 
     move-result v2
@@ -10975,7 +11281,7 @@
 
     move-result-object v0
 
-    invoke-virtual {p1}, Lorg/json/JSONObject;->toString()Ljava/lang/String;
+    invoke-virtual {v3}, Lorg/json/JSONObject;->toString()Ljava/lang/String;
 
     move-result-object p1
 
@@ -11015,7 +11321,7 @@
 
     new-instance v2, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda11;
 
-    invoke-direct {v2, p0, v0, v1}, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda11;-><init>(Lcom/codex/iflyinkuploader/MainActivity;Ljava/lang/String;Ljava/lang/String;)V
+    invoke-direct {v2, p0, v0, v1, v3}, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda11;-><init>(Lcom/codex/iflyinkuploader/MainActivity;Ljava/lang/String;Ljava/lang/String;Lorg/json/JSONObject;)V
 
     invoke-direct {p1, v2}, Ljava/lang/Thread;-><init>(Ljava/lang/Runnable;)V
 
@@ -12015,7 +12321,7 @@
     .line 788
     iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->fileText:Landroid/widget/TextView;
 
-    const-string v1, "\u672a\u9009\u62e9\u652f\u6301\u7684\u6587\u6863\uff08PDF/Word/PPT/EPUB\uff09"
+    const-string v1, "\u672a\u9009\u62e9\u6587\u4ef6"
 
     invoke-virtual {v0, v1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
@@ -12025,13 +12331,13 @@
     if-lez p1, :cond_0
 
     .line 790
-    const-string p1, "\u5df2\u5ffd\u7565\u4e0d\u652f\u6301\u7684\u6587\u4ef6"
+    const-string p1, "\u672a\u9009\u62e9\u6587\u4ef6"
 
     goto :goto_0
 
     .line 791
     :cond_0
-    const-string p1, "\u8bf7\u9009\u62e9 PDF\u3001Word\u3001PPT\u3001EPUB \u6587\u6863"
+    const-string p1, "\u8bf7\u9009\u62e9\u8981\u4e0a\u4f20\u7684\u6587\u4ef6"
 
     .line 789
     :goto_0
@@ -12069,7 +12375,7 @@
 
     move-result-object v0
 
-    const-string v1, " \u4e2a\u6587\u6863"
+    const-string v1, " \u4e2a\u6587\u4ef6"
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -12090,7 +12396,7 @@
 
     move-result-object v0
 
-    const-string v1, "\uff0c\u5df2\u5ffd\u7565 "
+    const-string v1, ""
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -12100,7 +12406,7 @@
 
     move-result-object p1
 
-    const-string v0, " \u4e2a\u4e0d\u652f\u6301\u6587\u4ef6"
+    const-string v0, ""
 
     invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -12158,7 +12464,7 @@
     :cond_3
     iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->statusText:Landroid/widget/TextView;
 
-    const-string v1, "\u6587\u6863\u5c06\u4e0a\u4f20\u5230\u6839\u76ee\u5f55"
+    const-string v1, "\u6587\u4ef6\u5c06\u4e0a\u4f20\u5230\u6839\u76ee\u5f55"
 
     invoke-virtual {v0, v1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
@@ -13570,6 +13876,18 @@
 
     move-result-object v1
 
+    iget-boolean v2, p0, Lcom/codex/iflyinkuploader/MainActivity;->notesForceRefresh:Z
+
+    if-eqz v2, :cond_1
+
+    const-string v2, "\u6b63\u5728\u5237\u65b0\u7b14\u8bb0\u8be6\u60c5\u7f13\u5b58..."
+
+    invoke-direct {p0, v2}, Lcom/codex/iflyinkuploader/MainActivity;->log(Ljava/lang/String;)V
+
+    invoke-direct {p0, v1}, Lcom/codex/iflyinkuploader/MainActivity;->warmNoteDetailCache(Ljava/util/List;)V
+
+    :cond_1
+
     .line 869
     new-instance v2, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda20;
 
@@ -13921,6 +14239,10 @@
 
     invoke-virtual {v0, v1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
+    iget-object v0, p0, Lcom/codex/iflyinkuploader/MainActivity;->selectedNoteDirId:Ljava/lang/String;
+
+    invoke-direct {p0, v0}, Lcom/codex/iflyinkuploader/MainActivity;->renderNotesForDir(Ljava/lang/String;)V
+
     .line 1062
     invoke-direct {p0, p1, p2}, Lcom/codex/iflyinkuploader/MainActivity;->showRichNoteDialog(Ljava/lang/String;Ljava/lang/String;)V
 
@@ -13961,91 +14283,45 @@
     return-void
 .end method
 
-.method synthetic lambda$showNoteDetail$26$com-codex-iflyinkuploader-MainActivity(Ljava/lang/String;Ljava/lang/String;)V
-    .locals 2
+.method synthetic lambda$showNoteDetail$26$com-codex-iflyinkuploader-MainActivity(Ljava/lang/String;Ljava/lang/String;Lorg/json/JSONObject;)V
+    .locals 3
 
     .line 1055
     :try_start_0
-    new-instance v0, Ljava/util/LinkedHashMap;
-
-    invoke-direct {v0}, Ljava/util/LinkedHashMap;-><init>()V
-
-    .line 1056
-    const-string v1, "id"
-
-    invoke-interface {v0, v1, p1}, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-
-    .line 1057
-    const-string p1, "http://api.iflyink.com/xbew-api/note/dxk/getNoteDetail"
-
-    invoke-direct {p0, p1, v0}, Lcom/codex/iflyinkuploader/MainActivity;->postWithSession(Ljava/lang/String;Ljava/util/Map;)Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;
+    invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->fetchNoteDetailRaw(Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object p1
 
-    .line 1058
-    iget v0, p1, Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;->code:I
+    invoke-direct {p0, p3, p1}, Lcom/codex/iflyinkuploader/MainActivity;->applyNoteDetailCache(Lorg/json/JSONObject;Ljava/lang/String;)V
 
-    const/16 v1, 0xc8
+    const-string v0, "__title"
 
-    if-ne v0, v1, :cond_0
-
-    iget-object v0, p1, Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;->raw:Ljava/lang/String;
-
-    invoke-direct {p0, v0, p2}, Lcom/codex/iflyinkuploader/MainActivity;->noteDetailTitle(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-virtual {p3, v0, p2}, Lorg/json/JSONObject;->optString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object p2
 
-    .line 1059
-    :cond_0
-    iget v0, p1, Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;->code:I
+    const-string v0, "__html"
 
-    if-ne v0, v1, :cond_1
+    const-string v1, ""
 
-    iget-object p1, p1, Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;->raw:Ljava/lang/String;
-
-    invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->noteHtml(Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object p1
-
-    goto :goto_0
-
-    :cond_1
-    new-instance v0, Ljava/lang/StringBuilder;
-
-    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
-
-    const-string v1, "<pre>"
-
-    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {p3, v0, v1}, Lorg/json/JSONObject;->optString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v0
 
-    iget-object p1, p1, Lcom/codex/iflyinkuploader/MainActivity$ApiResponse;->raw:Ljava/lang/String;
+    invoke-virtual {v0}, Ljava/lang/String;->isEmpty()Z
 
-    invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->compact(Ljava/lang/String;)Ljava/lang/String;
+    move-result v1
 
-    move-result-object p1
+    if-eqz v1, :cond_0
 
-    invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->escapeHtml(Ljava/lang/String;)Ljava/lang/String;
+    invoke-direct {p0, p1}, Lcom/codex/iflyinkuploader/MainActivity;->noteHtml(Ljava/lang/String;)Ljava/lang/String;
 
-    move-result-object p1
-
-    invoke-virtual {v0, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    const-string v0, "</pre>"
-
-    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p1
+    move-result-object v0
 
     .line 1060
-    :goto_0
+    :cond_0
+    move-object p1, v0
+
     new-instance v0, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda38;
 
     invoke-direct {v0, p0, p2, p1}, Lcom/codex/iflyinkuploader/MainActivity$$ExternalSyntheticLambda38;-><init>(Lcom/codex/iflyinkuploader/MainActivity;Ljava/lang/String;Ljava/lang/String;)V
