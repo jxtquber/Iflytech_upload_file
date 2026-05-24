@@ -48,6 +48,9 @@ export class FileService {
     const current = index + 1;
     onProgress(Math.max(1, Math.floor(index * 100 / total)), `正在处理 ${current}/${total}: ${file.name}`);
     const buffer = await this.readFile(file.uri);
+    if (buffer.byteLength === 0 && file.size === 0) {
+      throw new Error(`文件为空，已跳过: ${file.name}`);
+    }
     const md5 = HashUtil.md5Buffer(buffer).toUpperCase();
     const objectName = `${md5}${TextUtil.extension(file.name)}`;
     const size = buffer.byteLength > 0 ? buffer.byteLength : file.size;

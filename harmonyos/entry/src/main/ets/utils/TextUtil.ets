@@ -21,10 +21,17 @@ export class TextUtil {
   }
 
   static compact(raw: string): string {
-    if (raw.length <= 500) {
-      return raw;
+    const masked = TextUtil.maskSecrets(raw);
+    if (masked.length <= 500) {
+      return masked;
     }
-    return `${raw.substring(0, 500)}...`;
+    return `${masked.substring(0, 500)}...`;
+  }
+
+  static maskSecrets(raw: string): string {
+    return raw
+      .replace(/("(?:access_token|refresh_token|userToken|refreshToken|token|Authorization)"\s*:\s*")[^"]*"/gi, '$1***"')
+      .replace(/([?&](?:access_token|refresh_token|userToken|refreshToken|token|Authorization)=)[^&]*/gi, '$1***');
   }
 
   static formatBytes(size: number): string {
@@ -125,6 +132,31 @@ export class TextUtil {
       TextUtil.extension(TextUtil.cloudName(item)).replace('.', '')
     );
     return label.length > 0 ? label.toUpperCase() : '文件';
+  }
+
+  static stripHtml(raw: string): string {
+    return raw
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  static formatNoteTime(time: number): string {
+    if (time <= 0) {
+      return '';
+    }
+    const date = new Date(time);
+    const month = date.getMonth() + 1;
+    const hour = `${date.getHours()}`.padStart(2, '0');
+    const minute = `${date.getMinutes()}`.padStart(2, '0');
+    return `${month}月 · ${hour}:${minute}`;
   }
 
   static isCloudDir(item: CloudItem): boolean {

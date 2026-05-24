@@ -61,6 +61,45 @@ export class CloudItem {
   size: number = 0;
 }
 
+export class NoteDir {
+  dirId: string = '';
+  parentDirId: string = '';
+  dirName: string = '';
+  level: number = 0;
+  count: number = 0;
+}
+
+export class NoteItem {
+  noteId: string = '';
+  noteName: string = '';
+  type: string = '';
+  dir: string = '';
+  dirName: string = '';
+  summary: string = '';
+  contentText: string = '';
+  html: string = '';
+  content: string = '';
+  tempId: string = '';
+  createTime: number = 0;
+  updateTime: number = 0;
+  isEncrypt: number = 0;
+}
+
+export class NoteImage {
+  objectName: string = '';
+  url: string = '';
+}
+
+export class NoteDirDisplay {
+  dirId: string = '';
+  parentDirId: string = '';
+  dirName: string = '';
+  level: number = 0;
+  hasChildren: boolean = false;
+  expanded: boolean = false;
+  selected: boolean = false;
+}
+
 export interface UploadProgress {
   percent: number;
   message: string;

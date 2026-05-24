@@ -19,6 +19,12 @@ Open this directory:
 
 `D:\CodeX\Iflytech_upload_file\harmonyos`
 
+Before opening DevEco Studio, you can run a lightweight project check:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File D:\CodeX\Iflytech_upload_file\harmonyos\check-project.ps1
+```
+
 After DevEco finishes syncing project files, check or adjust the `compileSdkVersion`,
 `compatibleSdkVersion`, and `runtimeOS` values in `build-profile.json5` if your installed SDK differs.
 
@@ -29,3 +35,9 @@ password encryption.
 
 If command-line packaging reports `SDK component missing`, install the full HarmonyOS SDK build
 components from DevEco Studio's SDK Manager, then rerun the build.
+
+## Security Notes
+
+- The upstream service currently uses `http://api.iflyink.com/xbew-api`, so the port keeps cleartext HTTP for compatibility.
+- API signing values are kept in `ApiClient.ets` because the original client requires local request signing. Treat this app as a trusted personal utility, not a public distributable binary.
+- Error messages shown in the app are compacted and mask token-like values before display.
