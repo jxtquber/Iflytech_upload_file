@@ -360,10 +360,10 @@ struct Index {
     }
     const indexes = await this.api.fetchNotes();
     if (this.selectedNoteDirId === ROOT_DIR_ID) {
-      this.notes = await this.loadNotesWithCache(indexes, false);
+      this.notes = await this.loadNotesWithCache(indexes, true, indexes.map((note: NoteItem) => note.noteId));
     } else {
       const targetIndexes = this.filterNotesForSelectedDir(indexes);
-      this.notes = await this.loadNotesWithCache(targetIndexes, false);
+      this.notes = await this.loadNotesWithCache(targetIndexes, true, targetIndexes.map((note: NoteItem) => note.noteId));
     }
     this.notesLoaded = true;
   }
@@ -587,6 +587,14 @@ struct Index {
   private noteDirNameWidth(name: string): number {
     const length = Math.max(2, Math.min(name.length, 14));
     return length * 18 + 24;
+  }
+
+  private noteDirRowWidth(row: NoteDirDisplay): number {
+    return row.level * 18 + 28 + 28 + this.noteDirNameWidth(row.dirName) + 12;
+  }
+
+  private noteDirRootRowWidth(): number {
+    return 28 + 28 + this.noteDirNameWidth(this.noteRootDir().dirName) + 12;
   }
 
   private noteRootDir(): NoteDir {
@@ -1106,10 +1114,13 @@ struct Index {
           }, (row: NoteDirDisplay) => row.dirId)
         }
         .width('100%')
+        .alignItems(HorizontalAlign.Start)
       }
+      .align(Alignment.Start)
       .height(360)
     }
     .width('100%')
+    .alignItems(HorizontalAlign.Start)
     .padding(14)
     .backgroundColor(AppTheme.WHITE)
     .border({ width: 1, color: AppTheme.BORDER })
@@ -1156,8 +1167,10 @@ struct Index {
           .onClick(() => this.selectNoteDir(this.noteRootDir()))
       }
       .alignItems(VerticalAlign.Center)
+      .width(this.noteDirRootRowWidth())
     }
     .alignItems(HorizontalAlign.Start)
+    .width(this.noteDirRootRowWidth())
   }
 
   @Builder
@@ -1178,8 +1191,10 @@ struct Index {
           .onClick(() => this.selectOrToggleNoteDir(row))
       }
       .alignItems(VerticalAlign.Center)
+      .width(this.noteDirRowWidth(row))
     }
     .alignItems(HorizontalAlign.Start)
+    .width(this.noteDirRowWidth(row))
   }
 
   @Builder
